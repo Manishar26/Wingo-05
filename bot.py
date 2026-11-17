@@ -2,22 +2,16 @@ import os
 import time
 import threading
 import requests
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from flask import Flask
+
+app = Flask(__name__)
 
 TOKEN = "9233968106:AAHnPv7OYYVTSXWxuSg1V_AfnYhuOffARA8"
 CHAT_ID = "1181622773"
 
-# Dummy HTTP Server to satisfy Render's Web Service port binding requirement for free tier
-class SimpleHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"WinGo Bot is running 24/7!")
-
-def run_server():
-    port = int(os.environ.get("PORT", 10000))
-    server = HTTPServer(("0.0.0.0", port), SimpleHandler)
-    server.serve_forever()
+@app.route('/')
+def home():
+    return "WinGo Bot is running 24/7!"
 
 def send_telegram(text):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -32,8 +26,9 @@ def send_telegram(text):
         print("Telegram Send Error:", e)
 
 def check_wingo():
+    time.sleep(5)
     last_period = ""
-    print("WinGo 30S 24/7 Bot Started...")
+    print("WinGo 30S 24/7 Bot Loop Started...")
     send_telegram("🟢 <b>WinGo 30S Alert Bot Started!</b>\n0 or 5 vantha udane alert varum.")
     
     while True:
@@ -58,10 +53,9 @@ def check_wingo():
         time.sleep(3)
 
 if __name__ == "__main__":
-    # Start the HTTP server in a background thread so Render detects an open port
-    server_thread = threading.Thread(target=run_server, daemon=True)
-    server_thread.start()
+    t = threading.Thread(target=check_wingo, daemon=True)
+    t.start()
     
-    # Run the main Wingo checker loop
-    check_wingo()
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
     

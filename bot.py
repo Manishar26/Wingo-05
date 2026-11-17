@@ -1,10 +1,23 @@
 import os
 import time
+import threading
 import requests
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
-# Render Environment Variables or direct fallback
-TOKEN = os.environ.get("BOT_TOKEN", "UNGA_BOT_TOKEN_INGE_PODUNGA")
-CHAT_ID = os.environ.get("CHAT_ID", "UNGA_CHAT_ID_INGE_PODUNGA")
+TOKEN = "9233968106:AAHnPv7OYYVTSXWxuSg1V_AfnYhuOffARA8"
+CHAT_ID = "1181622773"
+
+# Dummy HTTP Server to satisfy Render's Web Service port binding requirement for free tier
+class SimpleHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"WinGo Bot is running 24/7!")
+
+def run_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), SimpleHandler)
+    server.serve_forever()
 
 def send_telegram(text):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -45,4 +58,10 @@ def check_wingo():
         time.sleep(3)
 
 if __name__ == "__main__":
+    # Start the HTTP server in a background thread so Render detects an open port
+    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread.start()
+    
+    # Run the main Wingo checker loop
     check_wingo()
+    
